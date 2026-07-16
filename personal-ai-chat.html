@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compass — personal AI</title>
+<style>
+  :root{
+    --bg: #F6F4EF;
+    --panel: #FFFFFF;
+    --ink: #23231F;
+    --ink-soft: #6B6A63;
+    --line: #E4E1D7;
+    --accent: #1F5C52;
+    --accent-soft: #E4EEEB;
+    --user-bubble: #23231F;
+    --user-text: #F6F4EF;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+  }
+  header{
+    padding:18px 24px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--panel);
+  }
+  header .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  header .brand .mark{
+    width:28px;height:28px;border-radius:8px;
+    background:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:14px;font-weight:600;
+  }
+  header h1{
+    font-size:16px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  header .status{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  #chat{
+    flex:1;
+    overflow-y:auto;
+    padding:24px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    max-width:760px;
+    width:100%;
+    margin:0 auto;
+  }
+  .row{ display:flex; }
+  .row.user{ justify-content:flex-end; }
+  .bubble{
+    max-width:78%;
+    padding:11px 15px;
+    border-radius:14px;
+    font-size:14.5px;
+    line-height:1.55;
+    white-space:pre-wrap;
+    word-wrap:break-word;
+  }
+  .row.user .bubble{
+    background:var(--user-bubble);
+    color:var(--user-text);
+    border-bottom-right-radius:4px;
+  }
+  .row.assistant .bubble{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-bottom-left-radius:4px;
+  }
+  .row.system .bubble{
+    background:var(--accent-soft);
+    color:var(--accent);
+    border:1px solid var(--accent-soft);
+    font-size:13px;
+  }
+  .empty{
+    margin:auto;
+    text-align:center;
+    color:var(--ink-soft);
+    max-width:420px;
+  }
+  .empty .mark-lg{
+    width:48px;height:48px;border-radius:14px;
+    background:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:22px;font-weight:600;
+    margin:0 auto 16px;
+  }
+  .empty h2{ color:var(--ink); font-size:17px; margin:0 0 6px; }
+  .empty p{ font-size:13.5px; margin:0; }
+  #composer{
+    border-top:1px solid var(--line);
+    background:var(--panel);
+    padding:16px 24px 20px;
+  }
+  #composer-inner{
+    max-width:760px;
+    margin:0 auto;
+    display:flex;
+    gap:10px;
+    align-items:flex-end;
+  }
+  #docbar{
+    max-width:760px;
+    margin:0 auto 10px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  #docbar input[type=text]{
+    flex:1;
+    font-size:12.5px;
+    padding:7px 10px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--bg);
+    color:var(--ink);
+  }
+  #docbar button{
+    font-size:12.5px;
+    padding:7px 12px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  #docbar button:hover{ border-color:var(--accent); color:var(--accent); }
+  #doc-label{
+    font-size:11.5px;
+    color:var(--accent);
+    background:var(--accent-soft);
+    padding:3px 8px;
+    border-radius:6px;
+    display:none;
+    white-space:nowrap;
+  }
+  textarea{
+    flex:1;
+    resize:none;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:11px 14px;
+    font-size:14.5px;
+    font-family:inherit;
+    background:var(--bg);
+    color:var(--ink);
+    max-height:160px;
+    line-height:1.5;
+  }
+  textarea:focus{ outline:none; border-color:var(--accent); }
+  button#send{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:0 20px;
+    height:42px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button#send:disabled{ opacity:0.5; cursor:default; }
+  .hint{
+    max-width:760px;
+    margin:8px auto 0;
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+  .dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--ink-soft); margin-right:5px; animation: pulse 1.2s infinite ease-in-out;
+  }
+  @keyframes pulse{ 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="mark">C</div>
+    <div>
+      <h1>Compass</h1>
+    </div>
+  </div>
+  <div class="status" id="status">Ready</div>
+</header>
+
+<div id="chat">
+  <div class="empty" id="empty-state">
+    <div class="mark-lg">C</div>
+    <h2>Your personal AI</h2>
+    <p>Ask anything, or paste in a document below to talk about it.</p>
+  </div>
+</div>
+
+<div id="composer">
+  <div id="docbar">
+    <span id="doc-label"></span>
+    <input type="text" id="doc-input" placeholder="Paste Google Doc / page text here to give Compass context">
+    <button id="doc-attach">Attach</button>
+  </div>
+  <div id="composer-inner">
+    <textarea id="input" rows="1" placeholder="Message Compass..."></textarea>
+    <button id="send">Send</button>
+  </div>
+  <div class="hint">Compass runs on the Claude API. Attaching a document adds its text as context for your next messages.</div>
+</div>
+
+<script>
+const chatEl = document.getElementById('chat');
+const emptyState = document.getElementById('empty-state');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const statusEl = document.getElementById('status');
+const docInput = document.getElementById('doc-input');
+const docAttach = document.getElementById('doc-attach');
+const docLabel = document.getElementById('doc-label');
+
+let history = [];
+let attachedDoc = null;
+
+function addMessage(role, text){
+  if(emptyState) emptyState.remove();
+  const row = document.createElement('div');
+  row.className = 'row ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return bubble;
+}
+
+function autoGrow(){
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
+}
+inputEl.addEventListener('input', autoGrow);
+
+inputEl.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendMessage();
+  }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+docAttach.addEventListener('click', () => {
+  const text = docInput.value.trim();
+  if(!text) return;
+  attachedDoc = text;
+  docLabel.style.display = 'inline-block';
+  docLabel.textContent = 'Doc attached (' + text.length + ' chars)';
+  docInput.value = '';
+  addMessage('system', 'Document attached as context for your next message.');
+});
+
+async function sendMessage(){
+  const text = inputEl.value.trim();
+  if(!text) return;
+
+  inputEl.value = '';
+  autoGrow();
+  addMessage('user', text);
+
+  let userContent = text;
+  if(attachedDoc){
+    userContent = "Here is a document for context:\n\n---\n" + attachedDoc + "\n---\n\nMy message: " + text;
+    attachedDoc = null;
+    docLabel.style.display = 'none';
+  }
+
+  history.push({ role: 'user', content: userContent });
+
+  sendBtn.disabled = true;
+  statusEl.innerHTML = '<span class="dot"></span>Thinking...';
+  const thinkingBubble = addMessage('assistant', '...');
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: history
+      })
+    });
+
+    const data = await response.json();
+    const reply = (data.content || [])
+      .map(b => b.type === 'text' ? b.text : '')
+      .filter(Boolean)
+      .join('\n');
+
+    thinkingBubble.textContent = reply || '(no response)';
+    history.push({ role: 'assistant', content: reply });
+  }catch(err){
+    thinkingBubble.textContent = 'Something went wrong reaching the AI. Please try again.';
+    console.error(err);
+  }finally{
+    sendBtn.disabled = false;
+    statusEl.textContent = 'Ready';
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+}
+</script>
+
+</body>
+</html>
